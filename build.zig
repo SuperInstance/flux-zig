@@ -27,8 +27,17 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     const run_unit_tests = b.addRunArtifact(unit_tests);
+
+    const vocab_tests = b.addTest(.{
+        .root_source_file = b.path("src/vocabulary.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const run_vocab_tests = b.addRunArtifact(vocab_tests);
+
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
+    test_step.dependOn(&run_vocab_tests.step);
 
     // Benchmark build (ReleaseFast)
     const bench = b.addExecutable(.{
