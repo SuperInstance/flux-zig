@@ -20,7 +20,7 @@ const Op = enum(u8) {
     _,
 };
 
-const FluxVM = struct {
+pub const FluxVM = struct {
     gp: [16]i32 = [_]i32{0} ** 16,
     pc: usize = 0,
     halted: bool = false,
@@ -42,7 +42,7 @@ const FluxVM = struct {
         return lo | (hi << 8);
     }
 
-    fn execute(self: *FluxVM) u32 {
+    pub fn execute(self: *FluxVM) u32 {
         self.halted = false;
         self.cycles = 0;
         while (!self.halted and self.pc < self.bytecode.len and self.cycles < 10_000_000) {
