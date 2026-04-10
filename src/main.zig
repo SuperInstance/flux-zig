@@ -108,3 +108,71 @@ pub fn main() !void {
     try stdout.print("Benchmark (100K iters): {d:.0} ns/iter\n", .{elapsed_ns / @as(f64, @floatFromInt(iters))});
     try stdout.print("\n✓ FLUX Zig implementation working!\n", .{});
 }
+
+test "factorial(7) equals 5040" {
+    const fact = [_]u8{
+        0x2B, 0x00, 0x07, 0x00,
+        0x2B, 0x01, 0x01, 0x00,
+        0x0A, 0x01, 0x01, 0x00,
+        0x0F, 0x00,
+        0x06, 0x00, 0xF6, 0xFF,
+        0x80,
+    };
+    var vm = FluxVM{ .bytecode = &fact };
+    _ = vm.execute();
+    try std.testing.expect(vm.gp[1] == 5040);
+    try std.testing.expect(vm.halted);
+}
+
+test "arithmetic: 3 + 4 = 7" {
+    const bc = [_]u8{ 0x2B, 0x00, 0x03, 0x00, 0x2B, 0x01, 0x04, 0x00, 0x08, 0x00, 0x00, 0x01, 0x80 };
+    var vm = FluxVM{ .bytecode = &bc };
+    _ = vm.execute();
+    try std.testing.expect(vm.gp[0] == 7);
+}
+
+test "arithmetic: 10 * 5 = 50" {
+    const bc = [_]u8{ 0x2B, 0x00, 0x0A, 0x00, 0x2B, 0x01, 0x05, 0x00, 0x0A, 0x00, 0x00, 0x01, 0x80 };
+    var vm = FluxVM{ .bytecode = &bc };
+    _ = vm.execute();
+    try std.testing.expect(vm.gp[0] == 50);
+}
+
+test "INC and DEC" {
+    const bc = [_]u8{ 0x2B, 0x00, 0x05, 0x00, 0x0E, 0x00, 0x0E, 0x00, 0x0F, 0x00, 0x80 };
+    var vm = FluxVM{ .bytecode = &bc };
+    _ = vm.execute();
+    try std.testing.expect(vm.gp[0] == 6); // 5 + 1 + 1 - 1 = 6
+}
+
+test "fibonacci(12) = 144" {
+    const bc = [_]u8{
+        0x2B, 0x00, 0x00, 0x00,  // MOVI R0, 0
+        0x2B, 0x01, 0x01, 0x00,  // MOVI R1, 1
+        0x2B, 0x02, 0x0C, 0x00,  // MOVI R2, 12
+        0x01, 0x03, 0x01,        // MOV R3, R1
+        0x08, 0x01, 0x01, 0x00,  // IADD R1, R1, R0
+        0x01, 0x00, 0x03,        // MOV R0, R3
+        0x0F, 0x02,              // DEC R2
+        0x06, 0x02, 0xF0, 0xFF,  // JNZ R2, -16
+        0x80,                    // HALT
+    };
+    var vm = FluxVM{ .bytecode = &bc };
+    _ = vm.execute();
+    try std.testing.expect(vm.gp[0] == 144);
+}
+
+test "stack push and pop" {
+    const bc = [_]u8{ 0x2B, 0x00, 0x2A, 0x00, 0x10, 0x00, 0x2B, 0x00, 0x00, 0x00, 0x11, 0x00, 0x80 };
+    var vm = FluxVM{ .bytecode = &bc };
+    _ = vm.execute();
+    try std.testing.expect(vm.gp[0] == 42);
+}
+
+test "infinite loop protection" {
+    const bc = [_]u8{ 0x2B, 0x00, 0x01, 0x00, 0x06, 0x00, 0xFC, 0xFF };
+    var vm = FluxVM{ .bytecode = &bc };
+    _ = vm.execute();
+    try std.testing.expect(!vm.halted); // Should stop at max_cycles
+    try std.testing.expect(vm.cycles == 10_000_000);
+}
