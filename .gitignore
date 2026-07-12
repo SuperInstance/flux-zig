@@ -1,0 +1,25 @@
+# Zig build artifacts
+.zig-cache/
+zig-out/
+zig-cache/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Debug
+*.pdb
+*.ilk
+*.dwarf
